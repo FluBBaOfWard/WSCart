@@ -73,16 +73,20 @@ wsCartReset:				;@ r0=
 	ldrb r0,[r3,#0xD]			;@ Mapper? (RTC present)
 	strb r0,rtcPresent
 
-	ldr r2,=gMachine
-	ldrb r2,[r2]
+	ldr r3,=gMachine
+	ldrb r3,[r3]
+	ands r2,r0,#1
+	ldrne r2,=rtcUpdate
 	cmp r1,#0					;@ Does the cart use EEPROM?
 	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
 	ldreq r1,=Luxsor2003W
 	ldrne r0,=Luxsor2001R		;@ Yes, use old Mapper Chip.
 	ldrne r1,=Luxsor2001W
-	cmp r2,#HW_POCKETCHALLENGEV2
+	cmp r3,#HW_POCKETCHALLENGEV2
 	ldreq r0,=KarnakR			;@ All PCV2 games uses Karnak mapper.
 	ldreq r1,=KarnakW
+	ldreq r2,=cartTimerUpdate
+	str r2,cartUpdatePtr
 	bl wsvSetCartMap
 
 	bl eepromReset
@@ -92,6 +96,13 @@ wsCartReset:				;@ r0=
 	ldmfd sp!,{v30ptr,lr}
 	bx lr
 
+;@----------------------------------------------------------------------------
+cartUpdate:				;@ r0=number of 384KHz clocks.
+;@----------------------------------------------------------------------------
+	ldr r1,cartUpdatePtr
+	cmp r1,#0
+	bxeq lr
+	bx r1
 ;@----------------------------------------------------------------------------
 fixRomSizeAndPtr:
 ;@----------------------------------------------------------------------------
@@ -412,23 +423,23 @@ cartEeprom:
 	.space wsEepromSize
 
 ;@----------------------------------------------------------------------------
-cartRtcStatusR:				;@ 0xCA
+rtcStatusR:					;@ 0xCA
 ;@----------------------------------------------------------------------------
 	adr rtcptr,cartRtc
 	b wsRtcStatusR
 ;@----------------------------------------------------------------------------
-cartRtcDataR:				;@ 0xCB
+rtcDataR:					;@ 0xCB
 ;@----------------------------------------------------------------------------
 	adr rtcptr,cartRtc
 	b wsRtcDataR
 ;@----------------------------------------------------------------------------
-cartRtcCommandW:			;@ 0xCA
+rtcCommandW:				;@ 0xCA
 ;@----------------------------------------------------------------------------
 	mov r1,r0
 	adr rtcptr,cartRtc
 	b wsRtcCommandW
 ;@----------------------------------------------------------------------------
-cartRtcDataW:				;@ 0xCB
+rtcDataW:					;@ 0xCB
 ;@----------------------------------------------------------------------------
 	mov r1,r0
 	adr rtcptr,cartRtc
@@ -450,6 +461,17 @@ rtcReset:
 	adr rtcptr,cartRtc
 	b wsRtcSetDateTime
 ;@----------------------------------------------------------------------------
+rtcUpdate:				;@ r0=number of 384KHz clocks.
+;@----------------------------------------------------------------------------
+	ldr r1,rtcCounter
+	subs r0,r1,r0
+	ldrcc r1,=384000				;@ 1 Second in cart clocks (3072000/8).
+	addcc r0,r0,r1
+	str r0,rtcCounter
+	bxcs lr
+	adr rtcptr,cartRtc
+	b wsRtcUpdate
+;@----------------------------------------------------------------------------
 cartRtc:
 	.space wsRtcSize
 
@@ -469,14 +491,6 @@ cartUnmW:
 	stmfd sp!,{spxptr,lr}
 	bl debugIOUnmappedW
 	ldmfd sp!,{spxptr,pc}
-;@----------------------------------------------------------------------------
-cartUpdate:				;@ r0=number of 384KHz clocks.
-;@----------------------------------------------------------------------------
-	ldrb r1,rtcPresent
-	cmp r1,#0
-	bxeq lr
-	adr rtcptr,cartRtc
-	b wsRtcUpdate
 
 ;@----------------------------------------------------------------------------
 cartTimerR:					;@ 0xD6
@@ -486,18 +500,33 @@ cartTimerR:					;@ 0xD6
 ;@----------------------------------------------------------------------------
 cartADPCMR:					;@ 0xD9
 ;@----------------------------------------------------------------------------
-	strb r0,[spxptr,#wsvADPCMR]
+	ldrb r1,[spxptr,#wsvADPCMR]
+	stmfd sp!,{r0,r1,spxptr,lr}
+	bl debugIOUnmappedR
+	ldmfd sp!,{r0,r1,spxptr,lr}
 	bx lr
 ;@----------------------------------------------------------------------------
 cartTimerW:					;@ 0xD6
 ;@ ((period + 1) * 2) cartridge clocks, where "one cartridge clock" = 384KHz = 1/8th CPU clock.
 ;@----------------------------------------------------------------------------
 	strb r0,[spxptr,#wsvCartTimer]
+	add r2,r0,#1
+	mov r2,r2,lsl#1
+	str r2,timerCounter
+	b cartUnmW
 	bx lr
 ;@----------------------------------------------------------------------------
 cartADPCMW:					;@ 0xD8
 ;@----------------------------------------------------------------------------
 	strb r0,[spxptr,#wsvADPCMW]
+	ldrb r2,[spxptr,#wsvADPCMR]
+	mov r3,r0,lsl#28
+	adds r2,r2,r3,asr#26
+	movmi r2,#0
+	cmppl r2,#0xFF
+	movpl r2,#0xFF
+	strb r2,[spxptr,#wsvADPCMR]
+	b cartUnmW
 	bx lr
 ;@----------------------------------------------------------------------------
 cartTimerReset:
@@ -507,6 +536,19 @@ cartTimerReset:
 	bxeq lr
 	ldr r1,=setInterruptExternal
 	bx lr
+;@----------------------------------------------------------------------------
+cartTimerUpdate:			;@ r0=number of 384KHz clocks.
+;@----------------------------------------------------------------------------
+	ldr r1,timerCounter
+	subs r0,r1,r0
+	ldrbcc r1,[spxptr,#wsvCartTimer]
+	addcc r1,r1,#1
+	movcc r1,r1,lsl#1
+	addcc r0,r0,r1
+	str r0,timerCounter
+	movcs r0,#0
+	movcc r0,#1
+	b setInterruptExternal
 ;@----------------------------------------------------------------------------
 
 
@@ -532,6 +574,12 @@ sramSize:
 eepromSize:
 	.long 0
 gGameHeader:
+	.long 0
+rtcCounter:
+	.long 0
+timerCounter:
+	.long 0
+cartUpdatePtr:
 	.long 0
 
 gGameID:
@@ -602,8 +650,8 @@ Luxsor2003R:
 	.long cartUnmR				;@ 0xC7
 	.long cartUnmR				;@ 0xC8
 	.long cartUnmR				;@ 0xC9
-	.long cartRtcStatusR		;@ 0xCA RTC status
-	.long cartRtcDataR			;@ 0xCB RTC data read
+	.long rtcStatusR			;@ 0xCA RTC status
+	.long rtcDataR				;@ 0xCB RTC data read
 	.long cartGPIODirR			;@ 0xCC General purpose input/output enable, bit 3-0.
 	.long cartGPIODataR			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashR			;@ 0xCE WonderWitch flash
@@ -636,8 +684,8 @@ Luxsor2003W:
 	.long cartUnmW				;@ 0xC7
 	.long cartUnmW				;@ 0xC8
 	.long cartUnmW				;@ 0xC9
-	.long cartRtcCommandW		;@ 0xCA RTC command
-	.long cartRtcDataW			;@ 0xCB RTC data write
+	.long rtcCommandW			;@ 0xCA RTC command
+	.long rtcDataW				;@ 0xCB RTC data write
 	.long cartGPIODirW			;@ 0xCC General purpose input/output enable, bit 3-0.
 	.long cartGPIODataW			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashW			;@ 0xCE WonderWitch flash
