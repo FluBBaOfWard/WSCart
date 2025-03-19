@@ -8,30 +8,20 @@
 	.global romSpacePtr
 	.global gRomSize
 	.global romSize
-	.global extEeprom
+	.global gGameHeader
+	.global gGameID
+	.global cartOrientation
+	.global cartEeprom
 	.global sramSize
 	.global eepromSize
-	.global rtcPresent
 
-	.global wsSRAM
-	.global extEepromMem
+	.global cartSRAM
+	.global cartEepromMem
 
-	.global fixRomSizeAndPtr
+	.global wsCartReset
 	.global resetCartridgeBanks
 	.global reBankSwitchAll
-	.global extEepromReset
-	.global cartTimerReset
-
-	.global cartRtcReset
 	.global cartUpdate
-	.global cartRtc
-
-	.global Luxsor2003R
-	.global Luxsor2003W
-	.global Luxsor2001R
-	.global Luxsor2001W
-	.global KarnakR
-	.global KarnakW
 
 	.syntax unified
 	.arm
@@ -41,6 +31,65 @@
 ;@----------------------------------------------------------------------------
 wsCartReset:				;@ r0=
 ;@----------------------------------------------------------------------------
+	stmfd sp!,{v30ptr,lr}
+	ldr v30ptr,=V30OpTable
+
+	bl fixRomSizeAndPtr
+
+	bl resetCartridgeBanks
+
+	ldr r0,[v30ptr,#v30MemTblInv-10*4]	;@ MemMap
+
+	ldr r3,=0xFFFF0				;@ Header offset
+	add r3,r0,r3
+	str r3,gGameHeader
+	ldrb r0,[r3,#0x8]			;@ Game ID
+	strb r0,gGameID
+	ldrb r2,[r3,#0xB]			;@ NVRAM size
+	mov r0,#0					;@ r0 = sram size
+	mov r1,#0					;@ r1 = eeprom size
+	cmp r2,#0x01				;@ 256kbit sram
+	cmpne r2,#0x02				;@ 256kbit sram
+	moveq r0,#0x8000
+	cmp r2,#0x03				;@ 1Mbit sram
+	moveq r0,#0x20000
+	cmp r2,#0x04				;@ 2Mbit sram
+	moveq r0,#0x40000
+	cmp r2,#0x05				;@ 4Mbit sram
+	moveq r0,#0x80000
+	cmp r2,#0x10				;@ 1kbit eeprom
+	moveq r1,#0x80
+	cmp r2,#0x20				;@ 16kbit eeprom
+	moveq r1,#0x800
+	cmp r2,#0x50				;@ 8kbit eeprom
+	moveq r1,#0x400
+	str r0,sramSize
+	str r1,eepromSize
+
+	ldrb r0,[r3,#0xC]			;@ Flags
+	and r0,r0,#1				;@ Orientation
+	strb r0,cartOrientation
+
+	ldrb r0,[r3,#0xD]			;@ Mapper? (RTC present)
+	strb r0,rtcPresent
+
+	ldr r2,=gMachine
+	ldrb r2,[r2]
+	cmp r1,#0					;@ Does the cart use EEPROM?
+	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
+	ldreq r1,=Luxsor2003W
+	ldrne r0,=Luxsor2001R		;@ Yes, use old Mapper Chip.
+	ldrne r1,=Luxsor2001W
+	cmp r2,#HW_POCKETCHALLENGEV2
+	ldreq r0,=KarnakR			;@ All PCV2 games uses Karnak mapper.
+	ldreq r1,=KarnakW
+	bl wsvSetCartMap
+
+	bl eepromReset
+	bl rtcReset
+	bl cartTimerReset
+
+	ldmfd sp!,{v30ptr,lr}
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -147,7 +196,7 @@ BankSwitch1_L_W:			;@ 0x10000-0x1FFFF
 	movs r1,r1,lsr#16			;@ 64kB blocks.
 	subne r1,r1,#1
 	and r1,r1,#3				;@ Mask for actual SRAM banks we emulate
-	ldr r2,=wsSRAM-0x10000
+	ldr r2,=cartSRAM-0x10000
 	and r3,r1,r0
 	add r3,r2,r3,lsl#16			;@ 64kB blocks.
 	str r3,[v30ptr,#v30MemTblInv-2*4]
@@ -261,14 +310,9 @@ cartWWFlashR:				;@ 0xCE WonderWitch Flash/SRAM select
 ;@----------------------------------------------------------------------------
 	ldrb r0,[spxptr,wsvBank1Map]
 	bx lr
-;@----------------------------------------------------------------------------
-cartUnmR:
-;@----------------------------------------------------------------------------
-	mov r0,#0xFF
-	bx lr
 
 ;@----------------------------------------------------------------------------
-cartGPIODirW:				;@ 0xCC General Purpose I/O enable/dir, bit 3-0.
+cartGPIODirW:				;@ 0xCC General Purpose I/O direction, bit 3-0.
 ;@----------------------------------------------------------------------------
 	strb r0,[spxptr,wsvGPIOEnable]
 	bx lr
@@ -297,77 +341,74 @@ cartWWFlashW:				;@ 0xCE WonderWitch Flash/SRAM select
 	bl setSRamArea
 	ldmfd sp!,{lr}
 	b reBankSwitch1
-;@----------------------------------------------------------------------------
-cartUnmW:
-;@----------------------------------------------------------------------------
-	bx lr
+
 ;@----------------------------------------------------------------------------
 extEepromDataLowR:			;@ 0xC4
 ;@----------------------------------------------------------------------------
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromDataLowR
 ;@----------------------------------------------------------------------------
 extEepromDataHighR:			;@ 0xC5
 ;@----------------------------------------------------------------------------
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromDataHighR
 ;@----------------------------------------------------------------------------
 extEepromAdrLowR:			;@ 0xC6
 ;@----------------------------------------------------------------------------
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromAddressLowR
 ;@----------------------------------------------------------------------------
 extEepromAdrHighR:			;@ 0xC7
 ;@----------------------------------------------------------------------------
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromAddressHighR
 ;@----------------------------------------------------------------------------
 extEepromStatusR:			;@ 0xC8
 ;@----------------------------------------------------------------------------
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromStatusR
 ;@----------------------------------------------------------------------------
 extEepromDataLowW:			;@ 0xC4
 ;@----------------------------------------------------------------------------
 	mov r1,r0
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromDataLowW
 ;@----------------------------------------------------------------------------
 extEepromDataHighW:			;@ 0xC5
 ;@----------------------------------------------------------------------------
 	mov r1,r0
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromDataHighW
 ;@----------------------------------------------------------------------------
 extEepromAdrLowW:			;@ 0xC6
 ;@----------------------------------------------------------------------------
 	mov r1,r0
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromAddressLowW
 ;@----------------------------------------------------------------------------
 extEepromAdrHighW:			;@ 0xC7
 ;@----------------------------------------------------------------------------
 	mov r1,r0
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromAddressHighW
 ;@----------------------------------------------------------------------------
 extEepromCommandW:			;@ 0xC8
 ;@----------------------------------------------------------------------------
 	mov r1,r0
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromCommandW
 ;@----------------------------------------------------------------------------
-extEepromReset:
+eepromReset:
 ;@----------------------------------------------------------------------------
 	ldr r1,eepromSize
 	cmp r1,#0
 	bxeq lr
-	ldr r2,=extEepromMem
+	ldr r2,=cartEepromMem
 	mov r3,#0					;@ Disallow protect
-	adr eeptr,extEeprom
+	adr eeptr,cartEeprom
 	b wsEepromReset
 ;@----------------------------------------------------------------------------
-extEeprom:
+cartEeprom:
 	.space wsEepromSize
 
 ;@----------------------------------------------------------------------------
@@ -393,7 +434,7 @@ cartRtcDataW:				;@ 0xCB
 	adr rtcptr,cartRtc
 	b wsRtcDataW
 ;@----------------------------------------------------------------------------
-cartRtcReset:
+rtcReset:
 ;@----------------------------------------------------------------------------
 	ldrb r0,rtcPresent
 	cmp r0,#0
@@ -409,16 +450,33 @@ cartRtcReset:
 	adr rtcptr,cartRtc
 	b wsRtcSetDateTime
 ;@----------------------------------------------------------------------------
+cartRtc:
+	.space wsRtcSize
+
+;@----------------------------------------------------------------------------
+cartUnmR:
+;@----------------------------------------------------------------------------
+	mov r11,r11					;@ No$GBA breakpoint
+	stmfd sp!,{spxptr,lr}
+	bl debugIOUnmappedR
+	ldmfd sp!,{spxptr,lr}
+	mov r0,#0xFF
+	bx lr
+;@----------------------------------------------------------------------------
+cartUnmW:
+;@----------------------------------------------------------------------------
+	mov r11,r11					;@ No$GBA breakpoint
+	stmfd sp!,{spxptr,lr}
+	bl debugIOUnmappedW
+	ldmfd sp!,{spxptr,pc}
+;@----------------------------------------------------------------------------
 cartUpdate:				;@ r0=number of 384KHz clocks.
 ;@----------------------------------------------------------------------------
-	ldrb r0,rtcPresent
-	cmp r0,#0
+	ldrb r1,rtcPresent
+	cmp r1,#0
 	bxeq lr
 	adr rtcptr,cartRtc
 	b wsRtcUpdate
-;@----------------------------------------------------------------------------
-cartRtc:
-	.space wsRtcSize
 
 ;@----------------------------------------------------------------------------
 cartTimerR:					;@ 0xD6
@@ -473,10 +531,16 @@ sramSize:
 	.long 0
 eepromSize:
 	.long 0
+gGameHeader:
+	.long 0
 
+gGameID:
+	.byte 0						;@ Game ID
+cartOrientation:
+	.byte 0						;@ 1=Vertical, 0=Horizontal
 rtcPresent:
 	.byte 0						;@ RTC present in cartridge
-	.space 3
+	.space 1
 ;@----------------------------------------------------------------------------
 	.section .rodata
 	.align 2
@@ -677,13 +741,13 @@ KarnakW:
 	.section .bss
 #endif
 	.align 2
-wsSRAM:
+cartSRAM:
 #ifdef GBA
 	.space 0x10000				;@ For the GBA
 #else
 	.space 0x40000
 #endif
-extEepromMem:
+cartEepromMem:
 	.space 0x800
 ;@----------------------------------------------------------------------------
 	.end

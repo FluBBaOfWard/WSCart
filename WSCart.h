@@ -11,11 +11,12 @@ extern "C" {
 extern u32 gRomSize;
 extern const int sramSize;
 extern const int eepromSize;
-extern WSEEPROM extEeprom;
+extern WSEEPROM cartEeprom;
+extern WsHeader *gGameHeader;
 
 extern u8 *romSpacePtr;
-extern u8 wsSRAM[0x10000];
-extern u8 extEepromMem[0x800];
+extern u8 cartSRAM[0x10000];
+extern u8 cartEepromMem[0x800];
 
 #ifdef __cplusplus
 } // extern "C"
