@@ -14,6 +14,7 @@
 	.global cartEeprom
 	.global sramSize
 	.global eepromSize
+	.global cartUpdatePtr
 
 	.global cartSRAM
 	.global cartEepromMem
@@ -495,63 +496,6 @@ cartUnmW:
 	ldmfd sp!,{spxptr,pc}
 
 ;@----------------------------------------------------------------------------
-cartTimerR:					;@ 0xD6
-;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,#wsvCartTimer]
-	bx lr
-;@----------------------------------------------------------------------------
-cartADPCMR:					;@ 0xD9
-;@----------------------------------------------------------------------------
-	ldrb r1,[spxptr,#wsvADPCMR]
-	stmfd sp!,{r0,r1,spxptr,lr}
-	bl debugIOUnmappedR
-	ldmfd sp!,{r0,r1,spxptr,lr}
-	bx lr
-;@----------------------------------------------------------------------------
-cartTimerW:					;@ 0xD6
-;@ ((period + 1) * 2) cartridge clocks, where "one cartridge clock" = 384KHz = 1/8th CPU clock.
-;@----------------------------------------------------------------------------
-	strb r0,[spxptr,#wsvCartTimer]
-	add r2,r0,#1
-	mov r2,r2,lsl#1
-	str r2,timerCounter
-	b cartUnmW
-	bx lr
-;@----------------------------------------------------------------------------
-cartADPCMW:					;@ 0xD8
-;@----------------------------------------------------------------------------
-	strb r0,[spxptr,#wsvADPCMW]
-	ldrb r2,[spxptr,#wsvADPCMR]
-	mov r3,r0,lsl#28
-	adds r2,r2,r3,asr#26
-	movmi r2,#0
-	cmppl r2,#0xFF
-	movpl r2,#0xFF
-	strb r2,[spxptr,#wsvADPCMR]
-	b cartUnmW
-	bx lr
-;@----------------------------------------------------------------------------
-cartTimerReset:
-;@----------------------------------------------------------------------------
-//	ldrb r0,cartTimerPresent
-	cmp r0,#0
-	bxeq lr
-	ldr r1,=setInterruptExternal
-	bx lr
-;@----------------------------------------------------------------------------
-cartTimerUpdate:			;@ r0=number of 384KHz clocks.
-;@----------------------------------------------------------------------------
-	ldr r1,timerCounter
-	subs r0,r1,r0
-	ldrbcc r1,[spxptr,#wsvCartTimer]
-	addcc r1,r1,#1
-	movcc r1,r1,lsl#1
-	addcc r0,r0,r1
-	str r0,timerCounter
-	movcs r0,#0
-	movcc r0,#1
-	b setInterruptExternal
-;@----------------------------------------------------------------------------
 
 
 romSpacePtr:
@@ -578,8 +522,6 @@ eepromSize:
 gGameHeader:
 	.long 0
 rtcCounter:
-	.long 0
-timerCounter:
 	.long 0
 cartUpdatePtr:
 	.long 0
@@ -638,7 +580,7 @@ Luxsor2003R:
 	.long cartUnmR				;@ 0xC9
 	.long rtcStatusR			;@ 0xCA RTC status
 	.long rtcDataR				;@ 0xCB RTC data read
-	.long cartGPIODirR			;@ 0xCC General purpose input/output enable, bit 3-0.
+	.long cartGPIODirR			;@ 0xCC General purpose input/output direction, bit 3-0.
 	.long cartGPIODataR			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashR			;@ 0xCE WonderWitch flash
 	.long BankSwitch4_F_R		;@ 0xCF Alias to 0xC0
@@ -667,7 +609,7 @@ Luxsor2003W:
 	.long cartUnmW				;@ 0xC9
 	.long rtcCommandW			;@ 0xCA RTC command
 	.long rtcDataW				;@ 0xCB RTC data write
-	.long cartGPIODirW			;@ 0xCC General purpose input/output enable, bit 3-0.
+	.long cartGPIODirW			;@ 0xCC General purpose input/output direction, bit 3-0.
 	.long cartGPIODataW			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashW			;@ 0xCE WonderWitch flash
 	.long BankSwitch4_F_W		;@ 0xCF Alias to 0xC0
@@ -697,7 +639,7 @@ KarnakR:
 	.long cartUnmR				;@ 0xC9
 	.long cartUnmR				;@ 0xCA
 	.long cartUnmR				;@ 0xCB
-	.long cartGPIODirR			;@ 0xCC General purpose input/output enable, bit 3-0.
+	.long cartGPIODirR			;@ 0xCC General purpose input/output direction, bit 3-0.
 	.long cartGPIODataR			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashR			;@ 0xCE WonderWitch flash
 	.long BankSwitch4_F_R		;@ 0xCF Alias to 0xC0
@@ -729,7 +671,7 @@ KarnakW:
 	.long cartUnmW				;@ 0xC9
 	.long cartUnmW				;@ 0xCA
 	.long cartUnmW				;@ 0xCB
-	.long cartGPIODirW			;@ 0xCC General purpose input/output enable, bit 3-0.
+	.long cartGPIODirW			;@ 0xCC General purpose input/output direction, bit 3-0.
 	.long cartGPIODataW			;@ 0xCD General purpose input/output data, bit 3-0.
 	.long cartWWFlashW			;@ 0xCE WonderWitch flash
 	.long BankSwitch4_F_W		;@ 0xCF Alias to 0xC0
