@@ -75,18 +75,20 @@ wsCartReset:				;@ r0=
 
 	ldr r3,=gMachine
 	ldrb r3,[r3]
-	ands r2,r0,#1
+	ands r2,r0,#1				;@ RTC?
 	ldrne r2,=rtcUpdate
+	str r2,cartUpdatePtr
 	cmp r1,#0					;@ Does the cart use EEPROM?
 	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
 	ldreq r1,=Luxsor2003W
+	moveq r2,#0x1F
 	ldrne r0,=Luxsor2001R		;@ Yes, use old Mapper Chip.
 	ldrne r1,=Luxsor2001W
+	movne r2,#0x0F
 	cmp r3,#HW_POCKETCHALLENGEV2
 	ldreq r0,=KarnakR			;@ All PCV2 games uses Karnak mapper.
 	ldreq r1,=KarnakW
-	ldreq r2,=cartTimerUpdate
-	str r2,cartUpdatePtr
+	moveq r2,#0x1F
 	bl wsvSetCartMap
 
 	bl eepromReset
@@ -606,15 +608,7 @@ Luxsor2001R:
 
 	;@ 0xC9-0xCF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xD0-0xDF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xE0-0xEF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xF0-0xFF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
+	;@ 0xD0-0xFF Mirrors of 0xC0-0xCF
 
 Luxsor2001W:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -628,15 +622,7 @@ Luxsor2001W:
 	.long extEepromCommandW		;@ 0xC8 ext-eeprom command
 	;@ 0xC9-0xCF
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xD6-0xDF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xE0-0xEF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xF0-0xFF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
+	;@ 0xD0-0xFF Mirrors of 0xC0-0xCF
 
 ;@----------------------------------------------------------------------------
 Luxsor2003R:
@@ -666,12 +652,7 @@ Luxsor2003R:
 	;@ 0xD6-0xDF
 	.long cartUnmR,cartUnmR
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xE0-0xEF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xF0-0xFF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
+	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
 
 Luxsor2003W:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -700,12 +681,7 @@ Luxsor2003W:
 	;@ 0xD6-0xDF
 	.long cartUnmW,cartUnmW
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xE0-0xEF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xF0-0xFF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
+	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
 
 ;@----------------------------------------------------------------------------
 KarnakR:
@@ -738,12 +714,7 @@ KarnakR:
 	.long cartADPCMR			;@ 0xD9 ADPCM output
 	;@ 0xDA-0xDF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xE0-0xEF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xF0-0xFF
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
+	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
 
 KarnakW:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -775,12 +746,7 @@ KarnakW:
 	.long cartUnmW				;@ 0xD9 ADPCM output
 	;@ 0xDA-0xDF
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xE0-0xEF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xF0-0xFF
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
+	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
 
 ;@----------------------------------------------------------------------------
 #ifdef GBA
