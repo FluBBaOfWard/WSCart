@@ -80,21 +80,20 @@ wsCartReset:				;@ r0=
 	ldrne r2,=rtcUpdate
 	str r2,cartUpdatePtr
 	cmp r1,#0					;@ Does the cart use EEPROM?
-	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
-	ldreq r1,=Luxsor2003W
-	moveq r2,#0x1F
 	ldrne r0,=Luxsor2001R		;@ Yes, use old Mapper Chip.
 	ldrne r1,=Luxsor2001W
 	movne r2,#0x0F
-	cmp r3,#HW_POCKETCHALLENGEV2
-	ldreq r0,=KarnakR			;@ All PCV2 games uses Karnak mapper.
-	ldreq r1,=KarnakW
+	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
+	ldreq r1,=Luxsor2003W
 	moveq r2,#0x1F
+	cmpeq r3,#HW_POCKETCHALLENGEV2
+	ldreq r0,=KarnakR			;@ Some PCV2 games uses Karnak mapper.
+	ldreq r1,=KarnakW
 	bl wsvSetCartMap
 
 	bl eepromReset
 	bl rtcReset
-	bl cartTimerReset
+	bl karnakReset
 
 	ldmfd sp!,{v30ptr,lr}
 	bx lr
@@ -650,10 +649,10 @@ KarnakR:
 	.long BankSwitch2_H_R		;@ 0xD3 2 more bits for 0xC2
 	.long BankSwitch3_R			;@ 0xD4 Alias to 0xC3
 	.long BankSwitch3_H_R		;@ 0xD5 2 more bits for 0xC3
-	.long cartTimerR			;@ 0xD6 Programmable Interval Timer
+	.long karnakTimerR			;@ 0xD6 Programmable Interval Timer
 	.long cartUnmR				;@ 0xD7
 	.long cartUnmR				;@ 0xD8 ADPCM input
-	.long cartADPCMR			;@ 0xD9 ADPCM output
+	.long karnakADPCMR			;@ 0xD9 ADPCM output
 	;@ 0xDA-0xDF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
 	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
@@ -682,9 +681,9 @@ KarnakW:
 	.long BankSwitch2_H_W		;@ 0xD3 2 more bits for 0xC2
 	.long BankSwitch3_L_W		;@ 0xD4 Alias to 0xC3
 	.long BankSwitch3_H_W		;@ 0xD5 2 more bits for 0xC3
-	.long cartTimerW			;@ 0xD6 Programmable Interval Timer
+	.long karnakTimerW			;@ 0xD6 Programmable Interval Timer
 	.long cartUnmW				;@ 0xD7
-	.long cartADPCMW			;@ 0xD8 ADPCM input
+	.long karnakADPCMW			;@ 0xD8 ADPCM input
 	.long cartUnmW				;@ 0xD9 ADPCM output
 	;@ 0xDA-0xDF
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
