@@ -89,6 +89,7 @@ wsCartReset:				;@ r0=
 	cmpeq r3,#HW_POCKETCHALLENGEV2
 	ldreq r0,=KarnakR			;@ Some PCV2 games uses Karnak mapper.
 	ldreq r1,=KarnakW
+	ldr r3,cartUnmR
 	bl wsvSetCartMap
 
 	bl eepromReset
@@ -484,7 +485,7 @@ cartUnmR:
 	stmfd sp!,{spxptr,lr}
 	bl debugIOUnmappedR
 	ldmfd sp!,{spxptr,lr}
-	mov r0,#0xFF
+	mov r0,#0xFF				;@ 2003, 2001 is open bus?
 	bx lr
 ;@----------------------------------------------------------------------------
 cartUnmW:
