@@ -82,14 +82,14 @@ wsCartReset:				;@ r0=
 	cmp r1,#0					;@ Does the cart use EEPROM?
 	ldrne r0,=Luxsor2001R		;@ Yes, use old Mapper Chip.
 	ldrne r1,=Luxsor2001W
-	movne r2,#0x0F
+	movne r2,#0x10
 	ldreq r0,=Luxsor2003R		;@ Nope, use new Mapper Chip.
 	ldreq r1,=Luxsor2003W
-	moveq r2,#0x1F
+	moveq r2,#0x20
 	cmpeq r3,#HW_POCKETCHALLENGEV2
 	ldreq r0,=KarnakR			;@ Some PCV2 games uses Karnak mapper.
 	ldreq r1,=KarnakW
-	ldr r3,cartUnmR
+	adr r3,cartUnmR
 	bl wsvSetCartMap
 
 	bl eepromReset
