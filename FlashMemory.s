@@ -40,8 +40,8 @@
 
 #ifdef NDS
 	.section .itcm						;@ For the NDS ARM9
-#elif GBA
-	.section .iwram, "ax", %progbits	;@ For the GBA
+#else
+	.section .text
 #endif
 	.align 2
 
