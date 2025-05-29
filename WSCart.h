@@ -13,6 +13,7 @@ extern const int sramSize;
 extern const int eepromSize;
 extern WSEEPROM cartEeprom;
 extern WsHeader *gGameHeader;
+extern u8 gFileType;
 
 extern u8 *romSpacePtr;
 extern u8 cartSRAM[0x10000];

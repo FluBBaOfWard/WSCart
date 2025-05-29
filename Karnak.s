@@ -102,7 +102,7 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 
 	bx lr
 ;@----------------------------------------------------------------------------
-karnakADPCMR:				;@ 0xD9
+karnakADPCMR:				;@ 0xD9 out r0=decoded pcm data
 ;@----------------------------------------------------------------------------
 	ldr r0,decoded
 	mov r0,r0,lsr#4

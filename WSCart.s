@@ -10,6 +10,7 @@
 	.global romSize
 	.global gGameHeader
 	.global gGameID
+	.global gFileType
 	.global cartOrientation
 	.global cartEeprom
 	.global sramSize
@@ -74,7 +75,7 @@ wsCartReset:				;@ r0=
 	ldrb r0,[r3,#0xD]			;@ Mapper? (RTC present)
 	strb r0,rtcPresent
 
-	ldr r3,=gMachine
+	ldr r3,=gFileType
 	ldrb r3,[r3]
 	ands r2,r0,#1				;@ RTC?
 	ldrne r2,=rtcUpdate
@@ -532,7 +533,8 @@ cartOrientation:
 	.byte 0						;@ 1=Vertical, 0=Horizontal
 rtcPresent:
 	.byte 0						;@ RTC present in cartridge
-	.space 1
+gFileType:
+	.byte HW_WONDERSWAN
 ;@----------------------------------------------------------------------------
 	.section .rodata
 	.align 2

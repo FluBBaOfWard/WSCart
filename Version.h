@@ -6,4 +6,4 @@
 //  Copyright © 2025 Fredrik Ahlström. All rights reserved.
 //
 
-#define WSCARTVERSION "V0.5.0"
+#define WSCARTVERSION "V0.5.2"
