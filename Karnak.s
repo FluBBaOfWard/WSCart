@@ -21,6 +21,7 @@ karnakReset:
 	strb r0,[spxptr,#wsvCartTimer]
 	strb r0,adpcmOddEven
 	strb r0,adpcmIndex
+	mov r0,#2048
 	str r0,decoded
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -53,8 +54,10 @@ karnakTimerW:				;@ 0xD6
 	ands r2,r0,#0x80			;@ Timer on?
 	adrne r2,timerUpdate
 	strbeq r2,adpcmOddEven
-	strbeq r2,adpcmIndex
-	streq r2,decoded
+	moveq r1,#0x10
+	strbeq r1,adpcmIndex
+	moveq r1,#2048
+	streq r1,decoded
 	ldr r1,=cartUpdatePtr
 	str r2,[r1]
 	strb r0,[spxptr,#wsvCartTimer]
@@ -79,7 +82,7 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 
 	movs r0,r0,lsl#29
 	mov r0,r0,lsr#29
-	adr r3,s_index_shift
+	adr r3,ima_index_shift
 	ldrsb r3,[r3,r0]
 	mov r0,r0,lsl#1
 	add r0,r0,#1
@@ -93,11 +96,10 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 
 	mul r2,r0,r2
 	ldr r0,decoded
-	add r0,r0,r2,asr#3
-	cmp r0,#-2048
-	ldrmi r0,=-2048
-	cmp r0,#2048
-	ldrpl r0,=2047
+	adds r0,r0,r2,asr#3
+	movmi r0,0
+	cmp r0,#4096
+	ldrpl r0,=4095
 	str r0,decoded
 
 	bx lr
@@ -106,9 +108,15 @@ karnakADPCMR:				;@ 0xD9 out r0=decoded pcm data
 ;@----------------------------------------------------------------------------
 	ldr r0,decoded
 	mov r0,r0,lsr#4
-	eor r0,r0,#0x80
 	bx lr
 ;@----------------------------------------------------------------------------
+dialogic_ima_step: // 49 entries
+	.long 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45
+	.long 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143
+	.long 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449
+	.long 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552
+ima_index_shift:
+	.byte -1, -1, -1, -1, 2, 4, 6, 8
 
 timerCounter:
 	.long 0
@@ -122,14 +130,7 @@ adpcmIndex:
 	.byte 0
 adpcmIn:
 	.byte 0
-s_index_shift:
-	.byte -1, -1, -1, -1, 2, 4, 6, 8
 	.align 2
-dialogic_ima_step:
-	.long 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45
-	.long 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143
-	.long 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449
-	.long 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552
 
 ;@----------------------------------------------------------------------------
 	.end
