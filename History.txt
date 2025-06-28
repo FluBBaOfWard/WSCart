@@ -1,6 +1,9 @@
 WSCart revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.6.2 - 2025-06-28 (FluBBa)
+	Fixed ADPCM decoding for the Karnak chip.
+
 V0.5.2 - 2025-05-30 (FluBBa)
 	Added file type variable.
 

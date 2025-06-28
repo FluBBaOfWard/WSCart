@@ -54,9 +54,9 @@ karnakTimerW:				;@ 0xD6
 	ands r2,r0,#0x80			;@ Timer on?
 	adrne r2,timerUpdate
 	strbeq r2,adpcmOddEven
-	moveq r1,#0x10
+	moveq r1,#0
 	strbeq r1,adpcmIndex
-	moveq r1,#2048
+	moveq r1,#0x80<<23
 	streq r1,decoded
 	ldr r1,=cartUpdatePtr
 	str r2,[r1]
@@ -76,30 +76,25 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 	movne r0,r0,lsr#4			;@ Not sure which nybble is first.
 	and r0,r0,#0xF
 	strb r0,adpcmIn
-	ldrb r1,adpcmIndex
-	adr r2,dialogic_ima_step
-	ldr r2,[r2,r1,lsl#2]
-
 	movs r0,r0,lsl#29
 	mov r0,r0,lsr#29
-	adr r3,ima_index_shift
+	ldrb r1,adpcmIndex
+	adr r2,upd775x_step
+	add r2,r2,r1,lsl#3+2
+	ldr r2,[r2,r0,lsl#2]
+	rsbcs r2,r2,#0
+
+	adr r3,upd775x_index_shift
 	ldrsb r3,[r3,r0]
-	mov r0,r0,lsl#1
-	add r0,r0,#1
-	rsbcs r0,r0,#0
 
 	adds r1,r1,r3
 	movmi r1,#0
-	cmp r1,#48
-	movpl r1,#48
+	cmp r1,#15
+	movpl r1,#15
 	strb r1,adpcmIndex
 
-	mul r2,r0,r2
 	ldr r0,decoded
-	adds r0,r0,r2,asr#3
-	movmi r0,0
-	cmp r0,#4096
-	ldrpl r0,=4095
+	add r0,r0,r2,lsl#22
 	str r0,decoded
 
 	bx lr
@@ -107,16 +102,33 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 karnakADPCMR:				;@ 0xD9 out r0=decoded pcm data
 ;@----------------------------------------------------------------------------
 	ldr r0,decoded
-	mov r0,r0,lsr#4
+	movs r0,r0,asr#23
+	bxpl lr
+	mov r0,r0,lsl#24
+	eor r0,r0,#0x80000000
+	mov r0,r0,asr#31
 	bx lr
 ;@----------------------------------------------------------------------------
-dialogic_ima_step: // 49 entries
-	.long 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45
-	.long 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143
-	.long 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449
-	.long 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552
-ima_index_shift:
-	.byte -1, -1, -1, -1, 2, 4, 6, 8
+
+upd775x_step:
+	.long  0,  0,  1,  2,  3,   5,   7,  10
+	.long  0,  1,  2,  3,  4,   6,   8,  13
+	.long  0,  1,  2,  4,  5,   7,  10,  15
+	.long  0,  1,  3,  4,  6,   9,  13,  19
+	.long  0,  2,  3,  5,  8,  11,  15,  23
+	.long  0,  2,  4,  7, 10,  14,  19,  29
+	.long  0,  3,  5,  8, 12,  16,  22,  33
+	.long  1,  4,  7, 10, 15,  20,  29,  43
+	.long  1,  4,  8, 13, 18,  25,  35,  53
+	.long  1,  6, 10, 16, 22,  31,  43,  64
+	.long  2,  7, 12, 19, 27,  37,  51,  76
+	.long  2,  9, 16, 24, 34,  46,  64,  96
+	.long  3, 11, 19, 29, 41,  57,  79, 117
+	.long  4, 13, 24, 36, 50,  69,  96, 143
+	.long  4, 16, 29, 44, 62,  85, 118, 175
+	.long  6, 20, 36, 54, 76, 104, 144, 214
+upd775x_index_shift:
+	.byte -1, -1, 0, 0, 1, 2, 2, 3
 
 timerCounter:
 	.long 0
