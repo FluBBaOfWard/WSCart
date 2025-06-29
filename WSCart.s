@@ -654,8 +654,8 @@ KarnakR:
 	.long BankSwitch3_H_R		;@ 0xD5 2 more bits for 0xC3
 	.long karnakTimerR			;@ 0xD6 Programmable Interval Timer
 	.long cartUnmR				;@ 0xD7
-	.long cartUnmR				;@ 0xD8 ADPCM input
-	.long karnakADPCMR			;@ 0xD9 ADPCM output
+	.long karnakADPCMR			;@ 0xD8 ADPCM input
+	.long karnakPCMR			;@ 0xD9 PCM output
 	;@ 0xDA-0xDF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
 	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF

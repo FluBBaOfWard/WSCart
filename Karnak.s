@@ -7,6 +7,7 @@
 	.global karnakTimerW
 	.global karnakADPCMR
 	.global karnakADPCMW
+	.global karnakPCMR
 
 	.syntax unified
 	.arm
@@ -70,12 +71,11 @@ karnakTimerW:				;@ 0xD6
 ;@----------------------------------------------------------------------------
 karnakADPCMW:					;@ 0xD8 r0=adpcm data
 ;@----------------------------------------------------------------------------
+	strb r0,adpcmIn
 	ldrb r1,adpcmOddEven
 	eors r1,r1,#1
 	strb r1,adpcmOddEven
 	movne r0,r0,lsr#4
-	and r0,r0,#0xF
-	strb r0,adpcmIn
 	movs r0,r0,lsl#29
 	mov r0,r0,lsr#29
 	ldrb r1,adpcmIndex
@@ -99,7 +99,12 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 
 	bx lr
 ;@----------------------------------------------------------------------------
-karnakADPCMR:				;@ 0xD9 out r0=decoded pcm data
+karnakADPCMR:				;@ 0xD8 out r0=adpcm data
+;@----------------------------------------------------------------------------
+	ldrb r0,adpcmIn
+	bx lr
+;@----------------------------------------------------------------------------
+karnakPCMR:					;@ 0xD9 out r0=decoded pcm data
 ;@----------------------------------------------------------------------------
 	ldr r0,accumulator
 	movs r0,r0,asr#23
