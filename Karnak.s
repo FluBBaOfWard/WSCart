@@ -21,8 +21,8 @@ karnakReset:
 	strb r0,[spxptr,#wsvCartTimer]
 	strb r0,adpcmOddEven
 	strb r0,adpcmIndex
-	mov r0,#2048
-	str r0,decoded
+	mov r0,#0x80<<23
+	str r0,accumulator
 	bx lr
 ;@----------------------------------------------------------------------------
 timerUpdate:				;@ r0=number of 384KHz clocks.
@@ -57,7 +57,7 @@ karnakTimerW:				;@ 0xD6
 	moveq r1,#0
 	strbeq r1,adpcmIndex
 	moveq r1,#0x80<<23
-	streq r1,decoded
+	streq r1,accumulator
 	ldr r1,=cartUpdatePtr
 	str r2,[r1]
 	strb r0,[spxptr,#wsvCartTimer]
@@ -73,7 +73,7 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 	ldrb r1,adpcmOddEven
 	eors r1,r1,#1
 	strb r1,adpcmOddEven
-	movne r0,r0,lsr#4			;@ Not sure which nybble is first.
+	movne r0,r0,lsr#4
 	and r0,r0,#0xF
 	strb r0,adpcmIn
 	movs r0,r0,lsl#29
@@ -93,15 +93,15 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 	movpl r1,#15
 	strb r1,adpcmIndex
 
-	ldr r0,decoded
+	ldr r0,accumulator
 	add r0,r0,r2,lsl#22
-	str r0,decoded
+	str r0,accumulator
 
 	bx lr
 ;@----------------------------------------------------------------------------
 karnakADPCMR:				;@ 0xD9 out r0=decoded pcm data
 ;@----------------------------------------------------------------------------
-	ldr r0,decoded
+	ldr r0,accumulator
 	movs r0,r0,asr#23
 	bxpl lr
 	mov r0,r0,lsl#24
@@ -134,7 +134,7 @@ timerCounter:
 	.long 0
 timerBackup:
 	.long 0
-decoded:
+accumulator:
 	.long 0
 adpcmOddEven:
 	.byte 0
