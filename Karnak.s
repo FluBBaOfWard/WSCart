@@ -55,8 +55,7 @@ karnakTimerW:				;@ 0xD6
 	ands r2,r0,#0x80			;@ Timer on?
 	adrne r2,timerUpdate
 	strbeq r2,adpcmOddEven
-	moveq r1,#0
-	strbeq r1,adpcmIndex
+	strbeq r2,adpcmIndex
 	moveq r1,#0x80<<23
 	streq r1,accumulator
 	ldr r1,=cartUpdatePtr
@@ -69,7 +68,7 @@ karnakTimerW:				;@ 0xD6
 	str r2,timerBackup
 	bx lr
 ;@----------------------------------------------------------------------------
-karnakADPCMW:					;@ 0xD8 r0=adpcm data
+karnakADPCMW:				;@ 0xD8 r0=adpcm data
 ;@----------------------------------------------------------------------------
 	strb r0,adpcmIn
 	ldrb r1,adpcmOddEven
@@ -79,12 +78,12 @@ karnakADPCMW:					;@ 0xD8 r0=adpcm data
 	movs r0,r0,lsl#29
 	mov r0,r0,lsr#29
 	ldrb r1,adpcmIndex
-	adr r2,upd775x_step
+	adr r2,upd775xStep
 	add r2,r2,r1,lsl#3
 	ldrb r2,[r2,r0]
 	rsbcs r2,r2,#0
 
-	adr r3,upd775x_index_shift
+	adr r3,upd775xIndexShift
 	ldrsb r3,[r3,r0]
 
 	adds r1,r1,r3
@@ -115,7 +114,7 @@ karnakPCMR:					;@ 0xD9 out r0=decoded pcm data
 	bx lr
 ;@----------------------------------------------------------------------------
 
-upd775x_step:
+upd775xStep:
 	.byte  0,  0,  1,  2,  3,   5,   7,  10
 	.byte  0,  1,  2,  3,  4,   6,   8,  13
 	.byte  0,  1,  2,  4,  5,   7,  10,  15
@@ -132,7 +131,7 @@ upd775x_step:
 	.byte  4, 13, 24, 36, 50,  69,  96, 143
 	.byte  4, 16, 29, 44, 62,  85, 118, 175
 	.byte  6, 20, 36, 54, 76, 104, 144, 214
-upd775x_index_shift:
+upd775xIndexShift:
 	.byte -1, -1, 0, 0, 1, 2, 2, 3
 
 timerCounter:
