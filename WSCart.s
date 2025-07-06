@@ -153,6 +153,10 @@ resetCartridgeBanks:
 	bl BankSwitch2_W
 	mov r0,#0xFF
 	bl BankSwitch3_W
+	mov r0,#0x3
+	strb r0,[spxptr,#wsvBnk1SlctX+1]
+	strb r0,[spxptr,#wsvBnk2SlctX+1]
+	strb r0,[spxptr,#wsvBnk3SlctX+1]
 	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 reBankSwitchAll:
@@ -198,7 +202,7 @@ BankSwitch1_H_W:			;@ 0x10000-0x1FFFF
 reBankSwitch1:				;@ 0x10000-0x1FFFF
 ;@----------------------------------------------------------------------------
 	ldrh r0,[spxptr,#wsvBnk1SlctX]
-	ldrb r1,[spxptr,wsvBank1Map]
+	ldrb r1,[spxptr,#wsvBank1Map]
 	tst r1,#1
 	bne BankSwitch1F_W
 ;@----------------------------------------------------------------------------
@@ -277,73 +281,73 @@ BankSwitch3_L_W:			;@ 0x30000-0x3FFFF
 ;@----------------------------------------------------------------------------
 BankSwitch4_F_R:			;@ 0xC0/0xCF
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk0SlctX]
+	ldrb r0,[spxptr,#wsvBnk0SlctX]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch1_R:				;@ 0xC1/0xD0
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk1SlctX]
+	ldrb r0,[spxptr,#wsvBnk1SlctX]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch1_H_R:			;@ 0xD1
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk1SlctX+1]
+	ldrb r0,[spxptr,#wsvBnk1SlctX+1]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch2_R:				;@ 0xC2/0xD2
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk2SlctX]
+	ldrb r0,[spxptr,#wsvBnk2SlctX]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch2_H_R:			;@ 0xD3
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk2SlctX+1]
+	ldrb r0,[spxptr,#wsvBnk2SlctX+1]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch3_R:				;@ 0xC3/0xD4
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk3SlctX]
+	ldrb r0,[spxptr,#wsvBnk3SlctX]
 	bx lr
 ;@----------------------------------------------------------------------------
 BankSwitch3_H_R:			;@ 0xD5
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBnk3SlctX+1]
+	ldrb r0,[spxptr,#wsvBnk3SlctX+1]
 	bx lr
 
 ;@----------------------------------------------------------------------------
 cartGPIODirR:				;@ 0xCC General Purpose I/O enable/dir?, bit 3-0.
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvGPIOEnable]
+	ldrb r0,[spxptr,#wsvGPIOEnable]
 	bx lr
 ;@----------------------------------------------------------------------------
 cartGPIODataR:				;@ 0xCD General Purpose I/O data, bit 3-0.
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvGPIOData]
+	ldrb r0,[spxptr,#wsvGPIOData]
 	bx lr
 ;@----------------------------------------------------------------------------
 cartWWFlashR:				;@ 0xCE WonderWitch Flash/SRAM select
 ;@----------------------------------------------------------------------------
-	ldrb r0,[spxptr,wsvBank1Map]
+	ldrb r0,[spxptr,#wsvBank1Map]
 	bx lr
 
 ;@----------------------------------------------------------------------------
 cartGPIODirW:				;@ 0xCC General Purpose I/O direction, bit 3-0.
 ;@----------------------------------------------------------------------------
-	strb r0,[spxptr,wsvGPIOEnable]
+	strb r0,[spxptr,#wsvGPIOEnable]
 	bx lr
 ;@----------------------------------------------------------------------------
 cartGPIODataW:				;@ 0xCD General Purpose I/O data, bit 3-0.
 ;@----------------------------------------------------------------------------
-	strb r0,[spxptr,wsvGPIOData]
+	strb r0,[spxptr,#wsvGPIOData]
 	bx lr
 ;@----------------------------------------------------------------------------
 cartWWFlashW:				;@ 0xCE WonderWitch Flash/SRAM select
 ;@----------------------------------------------------------------------------
-	ldrb r1,[spxptr,wsvBank1Map]
+	ldrb r1,[spxptr,#wsvBank1Map]
 	and r0,r0,#1
 	eors r1,r1,r0
 	bxeq lr
-	strb r0,[spxptr,wsvBank1Map]
+	strb r0,[spxptr,#wsvBank1Map]
 	tst r0,#1
 	ldrne r1,=BankSwitch1F_W
 	ldreq r1,=BankSwitch1_W
@@ -352,7 +356,7 @@ cartWWFlashW:				;@ 0xCE WonderWitch Flash/SRAM select
 	bl wsvSetIOPortOut
 	mov r0,#0xD0
 	bl wsvSetIOPortOut
-	ldrb r0,[spxptr,wsvBank1Map]
+	ldrb r0,[spxptr,#wsvBank1Map]
 	bl setSRamArea
 	ldmfd sp!,{lr}
 	b reBankSwitch1
@@ -486,10 +490,10 @@ cartUnmR:
 	stmfd sp!,{spxptr,lr}
 	bl debugIOUnmappedR
 	ldmfd sp!,{spxptr,lr}
-	mov r0,#0xFF				;@ 2003, 2001 is open bus?
+	mov r0,#0xFF				;@ 2001, 2003 & Karnak is open bus?
 	bx lr
 ;@----------------------------------------------------------------------------
-cartUnmW:
+cartUnmW:					;@ Affects open bus value
 ;@----------------------------------------------------------------------------
 	mov r11,r11					;@ No$GBA breakpoint
 	stmfd sp!,{spxptr,lr}
@@ -540,10 +544,10 @@ gFileType:
 	.align 2
 
 Luxsor2001R:
-	.long BankSwitch4_F_R		;@ 0xC0 Bank ROM 0x40000-0xF0000
-	.long BankSwitch1_R			;@ 0xC1 Bank SRAM 0x10000
-	.long BankSwitch2_R			;@ 0xC2 Bank ROM 0x20000
-	.long BankSwitch3_R			;@ 0xC3 Bank ROM 0x30000
+	.long BankSwitch4_F_R		;@ 0xC0 Bank switch 0x40000-0xF0000
+	.long BankSwitch1_R			;@ 0xC1 Bank switch 0x10000 (SRAM)
+	.long BankSwitch2_R			;@ 0xC2 Bank switch 0x20000
+	.long BankSwitch3_R			;@ 0xC3 Bank switch 0x30000
 	.long extEepromDataLowR		;@ 0xC4 ext-eeprom data low
 	.long extEepromDataHighR	;@ 0xC5 ext-eeprom data high
 	.long extEepromAdrLowR		;@ 0xC6 ext-eeprom address low
@@ -552,7 +556,7 @@ Luxsor2001R:
 
 	;@ 0xC9-0xCF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xD0-0xFF Mirrors of 0xC0-0xCF
+	;@ 0xD0-0xFF Is all cartUnmR
 
 Luxsor2001W:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -566,14 +570,14 @@ Luxsor2001W:
 	.long extEepromCommandW		;@ 0xC8 ext-eeprom command
 	;@ 0xC9-0xCF
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xD0-0xFF Mirrors of 0xC0-0xCF
+	;@ 0xD0-0xFF Is all cartUnmW
 
 ;@----------------------------------------------------------------------------
 Luxsor2003R:
-	.long BankSwitch4_F_R		;@ 0xC0 Bank ROM 0x40000-0xF0000
-	.long BankSwitch1_R			;@ 0xC1 Bank SRAM 0x10000
-	.long BankSwitch2_R			;@ 0xC2 Bank ROM 0x20000
-	.long BankSwitch3_R			;@ 0xC3 Bank ROM 0x30000
+	.long BankSwitch4_F_R		;@ 0xC0 Bank switch 0x40000-0xF0000
+	.long BankSwitch1_R			;@ 0xC1 Bank switch 0x10000 (SRAM)
+	.long BankSwitch2_R			;@ 0xC2 Bank switch 0x20000
+	.long BankSwitch3_R			;@ 0xC3 Bank switch 0x30000
 	.long cartUnmR				;@ 0xC4
 	.long cartUnmR				;@ 0xC5
 	.long cartUnmR				;@ 0xC6
@@ -596,7 +600,7 @@ Luxsor2003R:
 	;@ 0xD6-0xDF
 	.long cartUnmR,cartUnmR
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
+	;@ 0xE0-0xFF Is all cartUnmR
 
 Luxsor2003W:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -625,14 +629,14 @@ Luxsor2003W:
 	;@ 0xD6-0xDF
 	.long cartUnmW,cartUnmW
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
+	;@ 0xE0-0xFF Is all cartUnmW
 
 ;@----------------------------------------------------------------------------
 KarnakR:
-	.long BankSwitch4_F_R		;@ 0xC0 Bank ROM 0x40000-0xF0000
-	.long BankSwitch1_R			;@ 0xC1 Bank SRAM 0x10000
-	.long BankSwitch2_R			;@ 0xC2 Bank ROM 0x20000
-	.long BankSwitch3_R			;@ 0xC3 Bank ROM 0x30000
+	.long BankSwitch4_F_R		;@ 0xC0 Bank switch 0x40000-0xF0000
+	.long BankSwitch1_R			;@ 0xC1 Bank switch 0x10000 (SRAM)
+	.long BankSwitch2_R			;@ 0xC2 Bank switch 0x20000
+	.long BankSwitch3_R			;@ 0xC3 Bank switch 0x30000
 	.long cartUnmR				;@ 0xC4
 	.long cartUnmR				;@ 0xC5
 	.long cartUnmR				;@ 0xC6
@@ -658,7 +662,7 @@ KarnakR:
 	.long karnakPCMR			;@ 0xD9 PCM output
 	;@ 0xDA-0xDF
 	.long cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR,cartUnmR
-	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
+	;@ 0xE0-0xFF Is all cartUnmR
 
 KarnakW:
 	.long BankSwitch4_F_W		;@ 0xC0 Bank switch 0x40000-0xF0000
@@ -687,10 +691,10 @@ KarnakW:
 	.long karnakTimerW			;@ 0xD6 Programmable Interval Timer
 	.long cartUnmW				;@ 0xD7
 	.long karnakADPCMW			;@ 0xD8 ADPCM input
-	.long cartUnmW				;@ 0xD9 ADPCM output
+	.long cartUnmW				;@ 0xD9 PCM output
 	;@ 0xDA-0xDF
 	.long cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW,cartUnmW
-	;@ 0xE0-0xFF Mirrors of 0xC0-0xDF
+	;@ 0xE0-0xFF Is all cartUnmW
 
 ;@----------------------------------------------------------------------------
 #ifdef GBA

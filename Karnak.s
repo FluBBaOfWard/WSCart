@@ -43,10 +43,7 @@ timerUpdate:				;@ r0=number of 384KHz clocks.
 ;@----------------------------------------------------------------------------
 karnakTimerR:				;@ 0xD6
 ;@----------------------------------------------------------------------------
-	ldrb r1,[spxptr,#wsvCartTimer]
-	stmfd sp!,{r1,spxptr,lr}
-	bl debugIOUnmappedR
-	ldmfd sp!,{r0,spxptr,lr}
+	ldrb r0,[spxptr,#wsvCartTimer]
 	bx lr
 ;@----------------------------------------------------------------------------
 karnakTimerW:				;@ 0xD6
