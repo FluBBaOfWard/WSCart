@@ -68,6 +68,9 @@ karnakTimerW:				;@ 0xD6
 karnakADPCMW:				;@ 0xD8 r0=adpcm data
 ;@----------------------------------------------------------------------------
 	strb r0,adpcmIn
+	ldrb r1,[spxptr,#wsvCartTimer]
+	tst r1,#0x80
+	bxeq lr
 	ldrb r1,adpcmOddEven
 	eors r1,r1,#1
 	strb r1,adpcmOddEven
