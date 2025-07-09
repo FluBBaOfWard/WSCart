@@ -108,9 +108,8 @@ karnakPCMR:					;@ 0xD9 out r0=decoded pcm data
 	ldr r0,accumulator
 	movs r0,r0,asr#23
 	bxpl lr
-	mov r0,r0,lsl#24
-	eor r0,r0,#0x80000000
-	mov r0,r0,asr#31
+	add r0,r0,#0x80
+	mov r0,r0,asr#8
 	bx lr
 ;@----------------------------------------------------------------------------
 
