@@ -1,8 +1,9 @@
 WSCart revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
-V0.6.0 - 2025-07-09 (FluBBa)
+V0.6.0 - 2025-07-23 (FluBBa)
 	Fixed ADPCM decoding for the Karnak chip.
+	Fixed parsing of ROM header.
 
 V0.5.2 - 2025-05-30 (FluBBa)
 	Added file type variable.

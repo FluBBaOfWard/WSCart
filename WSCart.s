@@ -40,7 +40,7 @@ wsCartReset:				;@ r0=
 
 	bl resetCartridgeBanks
 
-	ldr r0,[v30ptr,#v30MemTblInv-10*4]	;@ MemMap
+	ldr r0,[v30ptr,#v30MemTblInv-0x10*4]	;@ MemMap
 
 	ldr r3,=0xFFFF0				;@ Header offset
 	add r3,r0,r3
