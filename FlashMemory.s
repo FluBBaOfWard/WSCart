@@ -39,7 +39,7 @@
 	.arm
 
 #ifdef NDS
-	.section .itcm						;@ For the NDS ARM9
+	.section .itcm, "ax", %progbits		;@ For the NDS ARM9
 #else
 	.section .text
 #endif
