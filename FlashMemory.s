@@ -326,4 +326,4 @@ flashMemChanged:
 	.space 2
 
 	.end
-#endif // #ifdef __arm__
+#endif // __arm__

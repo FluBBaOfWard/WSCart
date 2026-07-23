@@ -504,7 +504,7 @@ cartUnmW:					;@ Affects open bus value
 
 
 romSpacePtr:
-	.long 0
+	.long 0x08000000
 romPtr:
 	.long 0
 romPtr1:
@@ -705,12 +705,13 @@ KarnakW:
 	.align 2
 cartSRAM:
 #ifdef GBA
-	.space 0x10000				;@ For the GBA
+cartEepromMem:					;@ 0x800
+	.space 0x8000				;@ For the GBA
 #else
 	.space 0x40000
-#endif
 cartEepromMem:
 	.space 0x800
+#endif
 ;@----------------------------------------------------------------------------
 	.end
-#endif // #ifdef __arm__
+#endif // __arm__

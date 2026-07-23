@@ -15,12 +15,16 @@ extern WSEEPROM cartEeprom;
 extern WsHeader *gGameHeader;
 extern u8 gFileType;
 
-extern u8 *romSpacePtr;
-extern u8 cartSRAM[0x10000];
+extern const u8 *romSpacePtr;
+#ifdef GBA
+extern u8 cartSRAM[0x8000];
+#else
+extern u8 cartSRAM[0x40000];
+#endif
 extern u8 cartEepromMem[0x800];
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // WSCART_HEADER
+#endif // !WSCART_HEADER

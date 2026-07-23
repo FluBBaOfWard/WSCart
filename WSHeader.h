@@ -62,4 +62,4 @@ typedef struct
 } // extern "C"
 #endif
 
-#endif	// WSHEADER
+#endif // !WSHEADER
