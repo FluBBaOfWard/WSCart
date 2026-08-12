@@ -95,6 +95,7 @@ wsCartReset:				;@ r0=
 
 	bl eepromReset
 	bl rtcReset
+	ldr spxptr,=sphinx0
 	bl karnakReset
 
 	ldmfd sp!,{v30ptr,lr}
