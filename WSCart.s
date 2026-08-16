@@ -78,6 +78,7 @@ wsCartReset:				;@ r0=
 	ldr r3,=gFileType
 	ldrb r3,[r3]
 	ands r2,r0,#1				;@ RTC?
+	adreq r2,updateDummy
 	ldrne r2,=rtcUpdate
 	str r2,cartUpdatePtr
 	cmp r1,#0					;@ Does the cart use EEPROM?
@@ -99,15 +100,13 @@ wsCartReset:				;@ r0=
 	bl karnakReset
 
 	ldmfd sp!,{v30ptr,lr}
+updateDummy:
 	bx lr
 
 ;@----------------------------------------------------------------------------
 cartUpdate:				;@ r0=number of 384KHz clocks.
 ;@----------------------------------------------------------------------------
-	ldr r1,cartUpdatePtr
-	cmp r1,#0
-	bxeq lr
-	bx r1
+	ldr pc,cartUpdatePtr
 ;@----------------------------------------------------------------------------
 fixRomSizeAndPtr:
 ;@----------------------------------------------------------------------------
@@ -472,12 +471,7 @@ rtcReset:
 ;@----------------------------------------------------------------------------
 rtcUpdate:				;@ r0=number of 384KHz clocks.
 ;@----------------------------------------------------------------------------
-	ldr r1,rtcCounter
-	subs r0,r1,r0
-	ldrcc r1,=384000				;@ 1 Second in cart clocks (3072000/8).
-	addcc r0,r0,r1
-	str r0,rtcCounter
-	bxcs lr
+	mov r1,r0
 	adr rtcptr,cartRtc
 	b wsRtcUpdate
 ;@----------------------------------------------------------------------------
@@ -490,9 +484,8 @@ cartUnmR:
 	mov r11,r11					;@ No$GBA breakpoint
 	stmfd sp!,{spxptr,lr}
 	bl debugIOUnmappedR
-	ldmfd sp!,{spxptr,lr}
 	mov r0,#0xFF				;@ 2001, 2003 & Karnak is open bus?
-	bx lr
+	ldmfd sp!,{spxptr,pc}
 ;@----------------------------------------------------------------------------
 cartUnmW:					;@ Affects open bus value
 ;@----------------------------------------------------------------------------
