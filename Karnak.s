@@ -50,9 +50,10 @@ karnakTimerW:				;@ 0xD6
 ;@ ((period + 1) * 2) cartridge clocks, where "one cartridge clock" = 384KHz = 1/8th CPU clock.
 ;@----------------------------------------------------------------------------
 	ands r2,r0,#0x80			;@ Timer on?
-	adrne r2,timerUpdate
 	strbeq r2,adpcmOddEven
 	strbeq r2,adpcmIndex
+	adreq r2,dummy
+	adrne r2,timerUpdate
 	moveq r1,#0x80<<23
 	streq r1,accumulator
 	ldr r1,=cartUpdatePtr
@@ -63,6 +64,7 @@ karnakTimerW:				;@ 0xD6
 	mov r2,r2,lsl#1
 	str r2,timerCounter
 	str r2,timerBackup
+dummy:
 	bx lr
 ;@----------------------------------------------------------------------------
 karnakADPCMW:				;@ 0xD8 r0=adpcm data
@@ -75,16 +77,13 @@ karnakADPCMW:				;@ 0xD8 r0=adpcm data
 	eors r1,r1,#1
 	strb r1,adpcmOddEven
 	movne r0,r0,lsr#4
-	movs r0,r0,lsl#29
-	mov r0,r0,lsr#29
+	movs r0,r0,lsl#29			;@ Mask and check top bit
 	ldrb r1,adpcmIndex
 	adr r2,upd775xStep
-	add r2,r2,r1,lsl#3
-	ldrb r2,[r2,r0]
+	add r2,r2,r0,lsr#29
+	ldrsb r3,[r2,#8*16]			;@ Read from upd775xIndexShift
+	ldrb r2,[r2,r1,lsl#3]
 	rsbcs r2,r2,#0
-
-	adr r3,upd775xIndexShift
-	ldrsb r3,[r3,r0]
 
 	adds r1,r1,r3
 	movmi r1,#0
@@ -113,6 +112,7 @@ karnakPCMR:					;@ 0xD9 out r0=decoded pcm data
 	bx lr
 ;@----------------------------------------------------------------------------
 
+	.align 3
 upd775xStep:
 	.byte  0,  0,  1,  2,  3,   5,   7,  10
 	.byte  0,  1,  2,  3,  4,   6,   8,  13

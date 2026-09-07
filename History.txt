@@ -1,6 +1,10 @@
 WSCart revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.6.1 - 2026-09-07 (FluBBa)
+	Optimised ADPCM decoding.
+	Updated WSRTC with fixes.
+
 V0.6.0 - 2025-07-24 (FluBBa)
 	Fixed ADPCM decoding for the Karnak chip.
 	Fixed parsing of header on small ROMs.

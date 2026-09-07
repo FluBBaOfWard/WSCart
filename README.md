@@ -1,3 +1,3 @@
-# WSCart V0.6.0
+# WSCart V0.6.1
 
 WonderSwan cartridge emulation
